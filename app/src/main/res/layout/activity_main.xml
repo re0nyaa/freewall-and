@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:background="@color/bg_dark">
+
+    <!-- 상단 브랜드 헤더 -->
+    <LinearLayout
+        android:id="@+id/layout_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="12dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 쉴드 브랜드 아이콘 & 텍스트 -->
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_nav_shield"
+            app:tint="@color/accent_green" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="freewall"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginStart="8dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- 상단 미니 상태 표시 Pill -->
+        <LinearLayout
+            android:id="@+id/pill_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_status_pill"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="5dp"
+            android:gravity="center_vertical">
+
+            <View
+                android:id="@+id/view_status_dot"
+                android:layout_width="8dp"
+                android:layout_height="8dp"
+                android:background="@drawable/bg_power_ring"
+                android:backgroundTint="@color/text_muted" />
+
+            <TextView
+                android:id="@+id/tv_status_pill"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="연결 안 됨"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_secondary"
+                android:layout_marginStart="6dp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 메인 컨텐츠 영역 (탭별 뷰 컨테이너) -->
+    <FrameLayout
+        android:id="@+id/container_pages"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/layout_header"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- ================= PAGE 1: 홈 (보호 - 대형 버튼 전용) ================= -->
+        <LinearLayout
+            android:id="@+id/view_home"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingHorizontal="24dp"
+            android:visibility="visible">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- freewall-win 대형 170dp 전원 서클 버튼 -->
+            <FrameLayout
+                android:layout_width="220dp"
+                android:layout_height="220dp"
+                android:layout_gravity="center">
+
+                <!-- 외부 펄스 링 -->
+                <View
+                    android:id="@+id/view_power_ring"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_power_ring" />
+
+                <!-- 내부 메인 서클 버튼 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_power"
+                    android:layout_width="168dp"
+                    android:layout_height="168dp"
+                    android:layout_gravity="center"
+                    app:cardCornerRadius="84dp"
+                    app:cardElevation="12dp"
+                    app:cardBackgroundColor="@color/power_btn_off"
+                    app:strokeWidth="1.5dp"
+                    app:strokeColor="@color/surface_card_border"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/iv_power_symbol"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_power_symbol"
+                            app:tint="@color/text_muted" />
+
+                        <TextView
+                            android:id="@+id/tv_power_action"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="START"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.1"
+                            android:textColor="@color/text_muted"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
+
+            <!-- 상태 헤드라인 및 서브 설명 (freewall-win 동기화) -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="28dp">
+
+                <View
+                    android:id="@+id/view_status_center_dot"
+                    android:layout_width="9dp"
+                    android:layout_height="9dp"
+                    android:background="@drawable/bg_power_ring"
+                    android:backgroundTint="@color/text_muted" />
+
+                <TextView
+                    android:id="@+id/tv_status_headline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="보호 비활성화됨"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginStart="8dp" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_status_description"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="버튼을 눌러 DPI 패킷 우회 보호를 시작하세요"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="6dp" />
+
+            <!-- 프리셋 정보 배지 Pill 행 -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    android:id="@+id/badge_preset"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_preset_badge"
+                    android:text="Chunk 1B (Disorder)"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="7dp"
+                    android:layout_marginEnd="8dp" />
+
+                <TextView
+                    android:id="@+id/badge_sni"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_preset_badge"
+                    android:text="TLS SNI 파편화"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="7dp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1.2" />
+        </LinearLayout>
+
+        <!-- ================= PAGE 2: 설정 (DNS, 프리셋, 옵션) ================= -->
+        <ScrollView
+            android:id="@+id/view_settings"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            android:paddingHorizontal="20dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 섹션: 우회 모드 프리셋 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="우회 모드 프리셋"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginBottom="8dp" />
+
+                <RadioGroup
+                    android:id="@+id/rg_presets"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_console_box"
+                    android:padding="16dp">
+
+                    <RadioButton
+                        android:id="@+id/rb_preset_extreme"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:buttonTint="@color/accent_green"
+                        android:text="Chunk 1B (Disorder / 추천)\nHTTPS 청크 1B 분할 + 순서 교란으로 강력 차단 우회"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/surface_card_border"
+                        android:layout_marginVertical="12dp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_preset_standard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/accent_green"
+                        android:text="Mode 1 (표준 권장)\n표준 SNI 파편화 및 안전한 범용 우회 모드"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/surface_card_border"
+                        android:layout_marginVertical="12dp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_preset_fast"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/accent_green"
+                        android:text="Mode 2 (고속 분할)\n연결 지연을 최소화하여 빠른 반응 속도 제공"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp" />
+                </RadioGroup>
+
+                <!-- 섹션: DNS 설정 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DNS 보안 설정"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="@color/surface_card_border">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="DNS 리다이렉션 보호"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/text_primary" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="DNS 오염 방지를 위해 안전한 Quad9으로 리다이렉트"
+                                    android:textSize="11sp"
+                                    android:textColor="@color/text_secondary"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/switch_dns"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true"
+                                app:useMaterialThemeColors="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="@color/surface_card_border"
+                            android:layout_marginVertical="12dp" />
+
+                        <TextView
+                            android:id="@+id/tv_dns_info"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="※ 기본 권장: Quad9 UDP (9.9.9.9:9953)"
+                            android:textSize="12sp"
+                            android:textColor="@color/accent_green_light" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 섹션: 동작 옵션 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="동작 설정"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="@color/surface_card_border">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="앱 실행 시 자동 보호 시작"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/text_primary" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="앱을 열었을 때 자동으로 DPI 우회를 켭니다."
+                                android:textSize="11sp"
+                                android:textColor="@color/text_secondary"
+                                android:layout_marginTop="2dp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switch_auto_start"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="false"
+                            app:useMaterialThemeColors="true" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ================= PAGE 3: 로그 (콘솔 뷰어) ================= -->
+        <LinearLayout
+            android:id="@+id/view_logs"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp">
+
+            <!-- 상단 컨트롤 툴바 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
+
+                <TextView
+                    android:id="@+id/tv_log_count"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="0개 라인"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary" />
+
+                <CheckBox
+                    android:id="@+id/chk_auto_scroll"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:buttonTint="@color/accent_green"
+                    android:text="자동 스크롤"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginEnd="8dp" />
+
+                <Button
+                    android:id="@+id/btn_copy_logs"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="복사"
+                    android:textSize="12sp"
+                    android:textColor="@color/text_primary" />
+
+                <Button
+                    android:id="@+id/btn_clear_logs"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="비우기"
+                    android:textSize="12sp"
+                    android:textColor="@color/accent_red" />
+            </LinearLayout>
+
+            <!-- 터미널 콘솔 로그 뷰 박스 -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_console_box"
+                android:padding="12dp">
+
+                <ScrollView
+                    android:id="@+id/scroll_logs"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fillViewport="true">
+
+                    <TextView
+                        android:id="@+id/tv_logs"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:textSize="11.5sp"
+                        android:lineSpacingExtra="3dp"
+                        android:textColor="#E5E7EB"
+                        android:textIsSelectable="true" />
+                </ScrollView>
+            </FrameLayout>
+        </LinearLayout>
+
+    </FrameLayout>
+
+    <!-- 하단 네비게이션 바 -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="@color/nav_bar_bg"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:itemRippleColor="@color/accent_green_glow"
+        app:labelVisibilityMode="labeled"
+        app:elevation="8dp"
+        app:menu="@menu/bottom_nav_menu"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
