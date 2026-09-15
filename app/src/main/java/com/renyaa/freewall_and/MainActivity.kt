@@ -7,9 +7,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.net.Uri
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.provider.Settings
 import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
@@ -65,6 +68,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var switchDns: SwitchMaterial
     private lateinit var tvDnsInfo: TextView
     private lateinit var switchAutoStart: SwitchMaterial
+    private lateinit var tvBatteryStatus: TextView
+    private lateinit var btnBatteryOptimize: com.google.android.material.button.MaterialButton
     private lateinit var tvAppVersion: TextView
     private lateinit var tvUpdateStatus: TextView
     private lateinit var btnCheckUpdate: Button
@@ -164,6 +169,8 @@ class MainActivity : AppCompatActivity() {
         switchDns = findViewById(R.id.switch_dns)
         tvDnsInfo = findViewById(R.id.tv_dns_info)
         switchAutoStart = findViewById(R.id.switch_auto_start)
+        tvBatteryStatus = findViewById(R.id.tv_battery_status)
+        btnBatteryOptimize = findViewById(R.id.btn_battery_optimize)
         tvAppVersion = findViewById(R.id.tv_app_version)
         tvUpdateStatus = findViewById(R.id.tv_update_status)
         btnCheckUpdate = findViewById(R.id.btn_check_update)
@@ -241,6 +248,11 @@ class MainActivity : AppCompatActivity() {
         switchAutoStart.setOnCheckedChangeListener { _, isChecked ->
             if (isUpdatingUi) return@setOnCheckedChangeListener
             prefs.autoStartProtection = isChecked
+        }
+
+        // 배터리 최적화 제외 설정 버튼
+        btnBatteryOptimize.setOnClickListener {
+            requestIgnoreBatteryOptimization()
         }
 
         // 로그 제어
@@ -478,6 +490,8 @@ class MainActivity : AppCompatActivity() {
 
         switchAutoStart.isChecked = prefs.autoStartProtection
 
+        updateBatteryOptimizationUi()
+
         val currentVersion = try {
             packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0"
         } catch (_: Exception) {
@@ -486,6 +500,51 @@ class MainActivity : AppCompatActivity() {
         tvAppVersion.text = "현재 버전 v$currentVersion"
 
         isUpdatingUi = false
+    }
+
+    private fun updateBatteryOptimizationUi() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        val isIgnoring = powerManager?.isIgnoringBatteryOptimizations(packageName) == true
+
+        if (isIgnoring) {
+            tvBatteryStatus.text = "현재 배터리 최적화 제외됨 (항상 백그라운드 유지)"
+            tvBatteryStatus.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
+            btnBatteryOptimize.text = "제외됨 ✓"
+            btnBatteryOptimize.isEnabled = false
+            btnBatteryOptimize.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+            btnBatteryOptimize.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.surface_card_border))
+        } else {
+            tvBatteryStatus.text = "절전 모드 시 연결 끊김 방지 (설정 권장)"
+            tvBatteryStatus.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+            btnBatteryOptimize.text = "설정하기"
+            btnBatteryOptimize.isEnabled = true
+            btnBatteryOptimize.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
+            btnBatteryOptimize.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.accent_green))
+        }
+    }
+
+    private fun requestIgnoreBatteryOptimization() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        if (powerManager?.isIgnoringBatteryOptimizations(packageName) == true) {
+            Toast.makeText(this, "이미 배터리 최적화에서 제외되어 있습니다.", Toast.LENGTH_SHORT).show()
+            updateBatteryOptimizationUi()
+            return
+        }
+
+        try {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                // 대체 인텐트: 배터리 최적화 설정 목록 화면
+                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                startActivity(intent)
+            } catch (ex: Exception) {
+                Toast.makeText(this, "배터리 설정을 열 수 없습니다: ${ex.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun loadLogs() {
