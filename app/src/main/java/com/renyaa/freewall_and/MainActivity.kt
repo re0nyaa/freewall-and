@@ -25,9 +25,15 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
+    private val activityScope = CoroutineScope(Dispatchers.Main + Job())
     private lateinit var prefs: FreewallPreferences
 
     // 상단 헤더
@@ -59,6 +65,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var switchDns: SwitchMaterial
     private lateinit var tvDnsInfo: TextView
     private lateinit var switchAutoStart: SwitchMaterial
+    private lateinit var tvAppVersion: TextView
+    private lateinit var tvUpdateStatus: TextView
+    private lateinit var btnCheckUpdate: Button
+    private lateinit var updateManager: UpdateManager
 
     // 로그 화면 위젯
     private lateinit var tvLogCount: TextView
@@ -119,6 +129,11 @@ class MainActivity : AppCompatActivity() {
         AppLogger.removeListener(logListener)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        activityScope.cancel()
+    }
+
     private fun initViews() {
         // 상단 헤더
         viewStatusDot = findViewById(R.id.view_status_dot)
@@ -149,6 +164,10 @@ class MainActivity : AppCompatActivity() {
         switchDns = findViewById(R.id.switch_dns)
         tvDnsInfo = findViewById(R.id.tv_dns_info)
         switchAutoStart = findViewById(R.id.switch_auto_start)
+        tvAppVersion = findViewById(R.id.tv_app_version)
+        tvUpdateStatus = findViewById(R.id.tv_update_status)
+        btnCheckUpdate = findViewById(R.id.btn_check_update)
+        updateManager = UpdateManager(this)
 
         // 로그 위젯
         tvLogCount = findViewById(R.id.tv_log_count)
@@ -235,6 +254,88 @@ class MainActivity : AppCompatActivity() {
         btnClearLogs.setOnClickListener {
             AppLogger.clear()
             loadLogs()
+        }
+
+        // 업데이트 확인 버튼
+        btnCheckUpdate.setOnClickListener {
+            performUpdateCheck(userInitiated = true)
+        }
+    }
+
+    private fun performUpdateCheck(userInitiated: Boolean) {
+        val currentVersion = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0"
+        } catch (_: Exception) {
+            "1.0"
+        }
+        tvAppVersion.text = "현재 버전 v$currentVersion"
+        tvUpdateStatus.text = "GitHub 최신 릴리즈 확인 중..."
+        btnCheckUpdate.isEnabled = false
+
+        activityScope.launch {
+            val release = updateManager.checkLatestRelease()
+            btnCheckUpdate.isEnabled = true
+
+            if (release != null) {
+                if (updateManager.isUpdateAvailable(currentVersion, release.versionName)) {
+                    tvUpdateStatus.text = "새 버전 v${release.versionName} 발견!"
+                    showUpdateDialog(release)
+                } else {
+                    tvUpdateStatus.text = "현재 최신 버전을 사용 중입니다 (v$currentVersion)"
+                    if (userInitiated) {
+                        Toast.makeText(this@MainActivity, "현재 최신 버전입니다 (v$currentVersion)", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } else {
+                tvUpdateStatus.text = "최신 릴리즈 확인 실패 (인터넷 상태 확인)"
+                if (userInitiated) {
+                    Toast.makeText(this@MainActivity, "릴리즈 정보를 가져올 수 없습니다", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun showUpdateDialog(release: ReleaseInfo) {
+        val message = "새로운 버전 v${release.versionName}이 출시되었습니다.\n\n[업데이트 내용]\n${release.releaseNotes}"
+
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Freewall 업데이트")
+            .setMessage(message)
+            .setPositiveButton("지금 업데이트") { _, _ ->
+                if (release.apkDownloadUrl != null) {
+                    downloadAndInstallApk(release.apkDownloadUrl)
+                } else {
+                    // APK가 없는 경우 브라우저 릴리즈 페이지로 이동
+                    val browserIntent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(release.htmlUrl))
+                    startActivity(browserIntent)
+                }
+            }
+            .setNegativeButton("나중에", null)
+
+        builder.show()
+    }
+
+    private fun downloadAndInstallApk(downloadUrl: String) {
+        val progressDialog = android.app.ProgressDialog(this).apply {
+            setTitle("업데이트 다운로드")
+            setMessage("최신 APK를 다운로드 중입니다...")
+            setProgressStyle(android.app.ProgressDialog.STYLE_HORIZONTAL)
+            max = 100
+            setCancelable(false)
+            show()
+        }
+
+        activityScope.launch {
+            val apkFile = updateManager.downloadApk(downloadUrl) { progress ->
+                progressDialog.progress = progress
+            }
+            progressDialog.dismiss()
+
+            if (apkFile != null && apkFile.exists()) {
+                updateManager.installApk(apkFile)
+            } else {
+                Toast.makeText(this@MainActivity, "다운로드에 실패했습니다. GitHub에서 직접 받아주세요.", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -376,6 +477,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         switchAutoStart.isChecked = prefs.autoStartProtection
+
+        val currentVersion = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "1.0"
+        } catch (_: Exception) {
+            "1.0"
+        }
+        tvAppVersion.text = "현재 버전 v$currentVersion"
 
         isUpdatingUi = false
     }
