@@ -185,40 +185,6 @@
                 android:textColor="@color/text_secondary"
                 android:layout_marginTop="6dp" />
 
-            <!-- 프리셋 정보 배지 Pill 행 -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginTop="20dp">
-
-                <TextView
-                    android:id="@+id/badge_preset"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_preset_badge"
-                    android:text="Chunk 1B (Disorder)"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:paddingHorizontal="14dp"
-                    android:paddingVertical="7dp"
-                    android:layout_marginEnd="8dp" />
-
-                <TextView
-                    android:id="@+id/badge_sni"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/bg_preset_badge"
-                    android:text="TLS SNI 파편화"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/text_secondary"
-                    android:paddingHorizontal="14dp"
-                    android:paddingVertical="7dp" />
-            </LinearLayout>
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -487,6 +453,126 @@
                             android:textSize="12sp"
                             android:textColor="@color/accent_green"
                             app:strokeColor="@color/accent_green" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 섹션: 스플릿 터널링 (앱별 프록시) -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="스플릿 터널링 (앱별 프록시)"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="10dp"
+                    app:cardElevation="0dp"
+                    app:cardBackgroundColor="@color/surface_card"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="@color/surface_card_border">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="앱별 프록시 설정"
+                                    android:textSize="14sp"
+                                    android:textStyle="bold"
+                                    android:textColor="@color/text_primary" />
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="특정 앱만 선택하여 DPI 우회 보호를 적용하거나 제외합니다."
+                                    android:textSize="11sp"
+                                    android:textColor="@color/text_secondary"
+                                    android:layout_marginTop="2dp" />
+                            </LinearLayout>
+
+                            <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/switch_split_tunneling"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="false"
+                                app:useMaterialThemeColors="true" />
+                        </LinearLayout>
+
+                        <!-- 세부 설정 (스위치 켜짐 시 노출) -->
+                        <LinearLayout
+                            android:id="@+id/layout_split_tunneling_options"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone"
+                            android:layout_marginTop="12dp">
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="@color/surface_card_border"
+                                android:layout_marginBottom="12dp" />
+
+                            <RadioGroup
+                                android:id="@+id/rg_split_mode"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <RadioButton
+                                    android:id="@+id/rb_split_disallow"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:checked="true"
+                                    android:buttonTint="@color/accent_green"
+                                    android:text="선택한 앱 제외"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="12.5sp" />
+
+                                <RadioButton
+                                    android:id="@+id/rb_split_allow"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:buttonTint="@color/accent_green"
+                                    android:text="선택한 앱만 적용"
+                                    android:textColor="@color/text_primary"
+                                    android:textSize="12.5sp" />
+                            </RadioGroup>
+
+                            <Button
+                                android:id="@+id/btn_select_apps"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="42dp"
+                                android:layout_marginTop="10dp"
+                                android:text="대상 앱 선택하기 (0개 선택됨)"
+                                android:textSize="12.5sp"
+                                android:textColor="@color/accent_green"
+                                app:strokeColor="@color/accent_green" />
+                        </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

@@ -19,6 +19,9 @@ class FreewallPreferences(context: Context) {
         const val KEY_HTTPS_CHUNK_SIZE = "httpsChunkSize"
         const val KEY_HTTPS_DISORDER = "httpsDisorder"
         const val KEY_AUTO_START = "autoStartProtection"
+        const val KEY_SPLIT_TUNNELING_ENABLED = "splitTunnelingEnabled"
+        const val KEY_SPLIT_TUNNELING_MODE = "splitTunnelingMode"
+        const val KEY_SPLIT_TUNNELING_APPS = "splitTunnelingApps"
 
         @Volatile
         private var INSTANCE: FreewallPreferences? = null
@@ -61,6 +64,18 @@ class FreewallPreferences(context: Context) {
     var autoStartProtection: Boolean
         get() = prefs.getBoolean(KEY_AUTO_START, false)
         set(value) = prefs.edit().putBoolean(KEY_AUTO_START, value).apply()
+
+    var splitTunnelingEnabled: Boolean
+        get() = prefs.getBoolean(KEY_SPLIT_TUNNELING_ENABLED, false)
+        set(value) = prefs.edit().putBoolean(KEY_SPLIT_TUNNELING_ENABLED, value).apply()
+
+    var splitTunnelingMode: String
+        get() = prefs.getString(KEY_SPLIT_TUNNELING_MODE, "disallow") ?: "disallow"
+        set(value) = prefs.edit().putString(KEY_SPLIT_TUNNELING_MODE, value).apply()
+
+    var splitTunnelingApps: Set<String>
+        get() = prefs.getStringSet(KEY_SPLIT_TUNNELING_APPS, emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet(KEY_SPLIT_TUNNELING_APPS, HashSet(value)).apply()
 
     /**
      * macOS freewall Extreme Bypass 프리셋 적용

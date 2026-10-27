@@ -13,18 +13,25 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -57,8 +64,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewStatusCenterDot: View
     private lateinit var tvStatusHeadline: TextView
     private lateinit var tvStatusDescription: TextView
-    private lateinit var badgePreset: TextView
-    private lateinit var badgeSni: TextView
 
     // 설정 화면 위젯
     private lateinit var rgPresets: RadioGroup
@@ -68,6 +73,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var switchDns: SwitchMaterial
     private lateinit var tvDnsInfo: TextView
     private lateinit var switchAutoStart: SwitchMaterial
+    private lateinit var switchSplitTunneling: SwitchMaterial
+    private lateinit var layoutSplitTunnelingOptions: View
+    private lateinit var rgSplitMode: RadioGroup
+    private lateinit var rbSplitDisallow: RadioButton
+    private lateinit var rbSplitAllow: RadioButton
+    private lateinit var btnSelectApps: Button
     private lateinit var tvBatteryStatus: TextView
     private lateinit var btnBatteryOptimize: com.google.android.material.button.MaterialButton
     private lateinit var tvAppVersion: TextView
@@ -158,8 +169,6 @@ class MainActivity : AppCompatActivity() {
         viewStatusCenterDot = findViewById(R.id.view_status_center_dot)
         tvStatusHeadline = findViewById(R.id.tv_status_headline)
         tvStatusDescription = findViewById(R.id.tv_status_description)
-        badgePreset = findViewById(R.id.badge_preset)
-        badgeSni = findViewById(R.id.badge_sni)
 
         // 설정 위젯
         rgPresets = findViewById(R.id.rg_presets)
@@ -169,6 +178,12 @@ class MainActivity : AppCompatActivity() {
         switchDns = findViewById(R.id.switch_dns)
         tvDnsInfo = findViewById(R.id.tv_dns_info)
         switchAutoStart = findViewById(R.id.switch_auto_start)
+        switchSplitTunneling = findViewById(R.id.switch_split_tunneling)
+        layoutSplitTunnelingOptions = findViewById(R.id.layout_split_tunneling_options)
+        rgSplitMode = findViewById(R.id.rg_split_mode)
+        rbSplitDisallow = findViewById(R.id.rb_split_disallow)
+        rbSplitAllow = findViewById(R.id.rb_split_allow)
+        btnSelectApps = findViewById(R.id.btn_select_apps)
         tvBatteryStatus = findViewById(R.id.tv_battery_status)
         btnBatteryOptimize = findViewById(R.id.btn_battery_optimize)
         tvAppVersion = findViewById(R.id.tv_app_version)
@@ -215,18 +230,18 @@ class MainActivity : AppCompatActivity() {
             when (checkedId) {
                 R.id.rb_preset_extreme -> {
                     prefs.applyExtremeBypassPreset()
-                    Toast.makeText(this, "🚀 Chunk 1B Disorder 프리셋 적용됨", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Chunk 1B Disorder 프리셋 적용됨", Toast.LENGTH_SHORT).show()
                 }
                 R.id.rb_preset_standard -> {
                     prefs.applyStandardPreset()
-                    Toast.makeText(this, "⚡ Mode 1 (표준 권장) 프리셋 적용됨", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Mode 1 (표준 권장) 프리셋 적용됨", Toast.LENGTH_SHORT).show()
                 }
                 R.id.rb_preset_fast -> {
                     prefs.dnsMode = "udp"
                     prefs.httpsSplitMode = "chunk"
                     prefs.httpsChunkSize = 2
                     prefs.httpsDisorder = false
-                    Toast.makeText(this, "⚡ Mode 2 (고속 분할) 프리셋 적용됨", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, "Mode 2 (고속 분할) 프리셋 적용됨", Toast.LENGTH_SHORT).show()
                 }
             }
             updateSettingsUi()
@@ -248,6 +263,33 @@ class MainActivity : AppCompatActivity() {
         switchAutoStart.setOnCheckedChangeListener { _, isChecked ->
             if (isUpdatingUi) return@setOnCheckedChangeListener
             prefs.autoStartProtection = isChecked
+        }
+
+        // 스플릿 터널링 스위치
+        switchSplitTunneling.setOnCheckedChangeListener { _, isChecked ->
+            if (isUpdatingUi) return@setOnCheckedChangeListener
+            prefs.splitTunnelingEnabled = isChecked
+            layoutSplitTunnelingOptions.visibility = if (isChecked) View.VISIBLE else View.GONE
+            if (FreewallVpnService.isRunning) {
+                Toast.makeText(this, "스플릿 터널링 설정은 보호 재연결 시 적용됩니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // 스플릿 터널링 모드
+        rgSplitMode.setOnCheckedChangeListener { _, checkedId ->
+            if (isUpdatingUi) return@setOnCheckedChangeListener
+            when (checkedId) {
+                R.id.rb_split_disallow -> prefs.splitTunnelingMode = "disallow"
+                R.id.rb_split_allow -> prefs.splitTunnelingMode = "allow"
+            }
+            if (FreewallVpnService.isRunning) {
+                Toast.makeText(this, "스플릿 터널링 모드는 보호 재연결 시 적용됩니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // 대상 앱 선택 버튼
+        btnSelectApps.setOnClickListener {
+            showAppSelectionDialog()
         }
 
         // 배터리 최적화 제외 설정 버튼
@@ -464,18 +506,11 @@ class MainActivity : AppCompatActivity() {
     private fun updateSettingsUi() {
         isUpdatingUi = true
 
-        // 홈 화면 배지 텍스트 갱신
         if (prefs.httpsSplitMode == "chunk" && prefs.httpsChunkSize == 1 && prefs.httpsDisorder) {
-            badgePreset.text = "Chunk 1B (Disorder)"
-            badgeSni.text = "TLS SNI 파편화"
             rbPresetExtreme.isChecked = true
         } else if (prefs.httpsSplitMode == "sni") {
-            badgePreset.text = "Mode 1 (표준)"
-            badgeSni.text = "SNI 분할"
             rbPresetStandard.isChecked = true
         } else {
-            badgePreset.text = "Mode 2 (고속)"
-            badgeSni.text = "Chunk 2B"
             rbPresetFast.isChecked = true
         }
 
@@ -489,6 +524,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         switchAutoStart.isChecked = prefs.autoStartProtection
+
+        // 스플릿 터널링 UI 갱신
+        switchSplitTunneling.isChecked = prefs.splitTunnelingEnabled
+        layoutSplitTunnelingOptions.visibility = if (prefs.splitTunnelingEnabled) View.VISIBLE else View.GONE
+        if (prefs.splitTunnelingMode == "allow") {
+            rbSplitAllow.isChecked = true
+        } else {
+            rbSplitDisallow.isChecked = true
+        }
+        val count = prefs.splitTunnelingApps.size
+        btnSelectApps.text = "대상 앱 선택하기 (${count}개 선택됨)"
 
         updateBatteryOptimizationUi()
 
@@ -521,6 +567,83 @@ class MainActivity : AppCompatActivity() {
             btnBatteryOptimize.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
             btnBatteryOptimize.strokeColor = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.accent_green))
         }
+    }
+
+    private fun showAppSelectionDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_select_apps, null)
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val etSearch = dialogView.findViewById<EditText>(R.id.et_search_app)
+        val tvSelectedCount = dialogView.findViewById<TextView>(R.id.tv_selected_count)
+        val btnSelectAll = dialogView.findViewById<Button>(R.id.btn_select_all)
+        val btnDeselectAll = dialogView.findViewById<Button>(R.id.btn_deselect_all)
+        val progressLoading = dialogView.findViewById<ProgressBar>(R.id.progress_loading)
+        val rvApps = dialogView.findViewById<RecyclerView>(R.id.rv_apps)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btn_cancel_dialog)
+        val btnSave = dialogView.findViewById<Button>(R.id.btn_save_dialog)
+
+        rvApps.layoutManager = LinearLayoutManager(this)
+
+        var adapter: AppSelectAdapter? = null
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+
+        activityScope.launch(Dispatchers.IO) {
+            val pm = packageManager
+            val currentSelected = prefs.splitTunnelingApps
+            val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+            }
+            val resolveInfos = pm.queryIntentActivities(mainIntent, 0)
+
+            val appList = resolveInfos.mapNotNull { resolveInfo ->
+                val pkg = resolveInfo.activityInfo.packageName
+                if (pkg == packageName) return@mapNotNull null
+
+                val name = resolveInfo.loadLabel(pm).toString()
+                val icon = try { resolveInfo.loadIcon(pm) } catch (_: Exception) { null }
+                AppSelectInfo(name, pkg, icon, currentSelected.contains(pkg))
+            }.distinctBy { it.packageName }.sortedBy { it.appName.lowercase() }
+
+            launch(Dispatchers.Main) {
+                progressLoading.visibility = View.GONE
+                rvApps.visibility = View.VISIBLE
+
+                adapter = AppSelectAdapter(appList) { count ->
+                    tvSelectedCount.text = "${count}개 선택됨"
+                }
+                rvApps.adapter = adapter
+                tvSelectedCount.text = "${adapter?.getSelectedCount() ?: 0}개 선택됨"
+
+                btnSelectAll.setOnClickListener { adapter?.selectAll() }
+                btnDeselectAll.setOnClickListener { adapter?.deselectAll() }
+
+                etSearch.addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                    override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                        adapter?.filter(s?.toString() ?: "")
+                    }
+                    override fun afterTextChanged(s: Editable?) {}
+                })
+
+                btnSave.setOnClickListener {
+                    val selected = adapter?.getSelectedPackages() ?: emptySet()
+                    prefs.splitTunnelingApps = selected
+                    updateSettingsUi()
+                    Toast.makeText(this@MainActivity, "스플릿 터널링 앱 목록이 저장되었습니다. (${selected.size}개)", Toast.LENGTH_SHORT).show()
+                    if (FreewallVpnService.isRunning) {
+                        Toast.makeText(this@MainActivity, "VPN 재연결 시 반영됩니다.", Toast.LENGTH_SHORT).show()
+                    }
+                    dialog.dismiss()
+                }
+            }
+        }
+
+        dialog.show()
     }
 
     private fun requestIgnoreBatteryOptimization() {

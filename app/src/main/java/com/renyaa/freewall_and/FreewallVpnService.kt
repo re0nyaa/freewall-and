@@ -104,10 +104,47 @@ class FreewallVpnService : VpnService() {
                 .addAddress("10.233.0.2", 30)
                 .addRoute("10.233.0.0", 30)
 
-            try {
-                builder.addDisallowedApplication(packageName)
-            } catch (e: Exception) {
-                Log.w(TAG, "addDisallowedApplication 예외: ${e.message}")
+            if (prefs.splitTunnelingEnabled) {
+                val selectedApps = prefs.splitTunnelingApps
+                val mode = prefs.splitTunnelingMode
+
+                if (mode == "allow") {
+                    // 선택한 앱만 우회 (허용 목록)
+                    if (selectedApps.isNotEmpty()) {
+                        for (pkg in selectedApps) {
+                            try {
+                                builder.addAllowedApplication(pkg)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "addAllowedApplication 실패 ($pkg): ${e.message}")
+                            }
+                        }
+                    } else {
+                        try {
+                            builder.addDisallowedApplication(packageName)
+                        } catch (_: Exception) {}
+                    }
+                } else {
+                    // 선택한 앱 우회 제외 (제외 목록)
+                    try {
+                        builder.addDisallowedApplication(packageName)
+                    } catch (_: Exception) {}
+
+                    for (pkg in selectedApps) {
+                        if (pkg != packageName) {
+                            try {
+                                builder.addDisallowedApplication(pkg)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "addDisallowedApplication 실패 ($pkg): ${e.message}")
+                            }
+                        }
+                    }
+                }
+            } else {
+                try {
+                    builder.addDisallowedApplication(packageName)
+                } catch (e: Exception) {
+                    Log.w(TAG, "addDisallowedApplication 예외: ${e.message}")
+                }
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -124,6 +161,10 @@ class FreewallVpnService : VpnService() {
             updateTileState()
 
             AppLogger.log("🛡️ Freewall 보호가 시작되었습니다 (포트: ${prefs.port})")
+            if (prefs.splitTunnelingEnabled) {
+                val modeText = if (prefs.splitTunnelingMode == "allow") "허용 목록만 우회" else "제외 목록 우회 제외"
+                AppLogger.log("🔀 스플릿 터널링 적용: ${prefs.splitTunnelingApps.size}개 앱 (${modeText})")
+            }
             Log.i(TAG, "Freewall VPN 및 DPI 우회 프록시 시작 성공 (포트: ${prefs.port})")
         } catch (e: Exception) {
             AppLogger.log("❌ VPN 시작 실패: ${e.message}", true)
